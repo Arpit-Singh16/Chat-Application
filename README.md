@@ -1,16 +1,3 @@
-# chat
-
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+# Chat-Application
+A real time chat application using Flutter,Dart at frontened and Firebase at backend
+>>>>>>> 1ad19a9c49c4fe17f16b8cd6b81d882e9e18d672
