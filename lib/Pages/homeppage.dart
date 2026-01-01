@@ -19,13 +19,12 @@ class homepage extends StatefulWidget {
 }
 
 class _homepageState extends State<homepage> {
-  /// map: receiverId -> chat document
+  /// receiverId -> chat document
   final Map<String, QueryDocumentSnapshot> chatMap = {};
 
   @override
   void initState() {
     super.initState();
-
     Future.microtask(() {
       Provider.of<dataprovider>(context, listen: false).fetchcontact();
     });
@@ -38,10 +37,15 @@ class _homepageState extends State<homepage> {
 
       // ---------------- APP BAR ----------------
       appBar: AppBar(
+        elevation: 0,
         backgroundColor: Colors.grey.shade900,
         title: const Text(
           "Chats",
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           PopupMenuButton(
@@ -76,13 +80,14 @@ class _homepageState extends State<homepage> {
 
       // ---------------- FAB ----------------
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green,
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const Add()),
           );
         },
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.chat, color: Colors.black),
       ),
 
       // ---------------- BODY ----------------
@@ -95,7 +100,6 @@ class _homepageState extends State<homepage> {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              /// rebuild mapping every snapshot
               chatMap.clear();
 
               if (snapshot.hasData) {
@@ -119,47 +123,17 @@ class _homepageState extends State<homepage> {
                   ),
                 ),
                 child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: contacts.contacts.length,
                   itemBuilder: (context, index) {
                     final contact = contacts.contacts[index];
                     final chatDoc = chatMap[contact['receiverId']];
 
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.4),
-                        border: Border(
-                          bottom:
-                          BorderSide(color: Colors.grey.shade600),
-                        ),
-                      ),
-                      child: ListTile(
-                        leading: Hero(
-                          tag: 'avatar_$index',
-                          child: CircleAvatar(
-                            radius: 22,
-                            backgroundImage: const AssetImage(
-                              "assets/images/gooku.jpg",
-                            ),
-                          ),
-                        ),
-
-                        title: Text(
-                          contact["name"] ?? "Name",
-                          style:
-                          const TextStyle(color: Colors.white),
-                        ),
-
-                        subtitle: Text(
-                          chatDoc != null
-                              ? chatDoc['lastMessage']
-                              : "Tap to start the chat",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                          ),
-                        ),
-
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
                         onTap: () {
                           chat.initChat(contact["receiverId"]);
                           Navigator.push(
@@ -172,6 +146,66 @@ class _homepageState extends State<homepage> {
                             ),
                           );
                         },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.55),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.35),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              /// Avatar
+                              Hero(
+                                tag: 'avatar_$index',
+                                child: CircleAvatar(
+                                  radius: 26,
+                                  backgroundImage: const AssetImage(
+                                      "assets/images/gooku.jpg"),
+                                ),
+                              ),
+
+                              const SizedBox(width: 14),
+
+                              /// Name & Message
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      contact["name"] ?? "Name",
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      chatDoc != null
+                                          ? chatDoc['lastMessage']
+                                          : "Tap to start the chat",
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     );
                   },
@@ -180,34 +214,6 @@ class _homepageState extends State<homepage> {
             },
           );
         },
-      ),
-    );
-  }
-}
-
-// ---------------- FULL SCREEN IMAGE ----------------
-class FullScreenImage extends StatelessWidget {
-  final String imagePath;
-  final String tag;
-
-  const FullScreenImage({
-    super.key,
-    required this.imagePath,
-    required this.tag,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.pop(context),
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(
-          child: Hero(
-            tag: tag,
-            child: Image.asset(imagePath),
-          ),
-        ),
       ),
     );
   }

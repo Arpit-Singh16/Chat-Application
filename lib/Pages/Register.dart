@@ -1,156 +1,8 @@
-// import 'package:flutter/material.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-//
-// class PhoneAuthPage extends StatefulWidget {
-//   const PhoneAuthPage({super.key});
-//
-//   @override
-//   State<PhoneAuthPage> createState() => _PhoneAuthPageState();
-// }
-//
-// class _PhoneAuthPageState extends State<PhoneAuthPage> {
-//   final TextEditingController phoneController = TextEditingController(); // 1
-//   final TextEditingController otpController = TextEditingController();   // 2
-//
-//   String verificationId = "";    // 3
-//   bool otpSent = false;          // 4
-//   bool loading = false;          // 5
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text('Phone Login')),
-//       body: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             // PHONE NUMBER TEXTFIELD
-//             TextField(
-//               controller: phoneController,          // 6
-//               keyboardType: TextInputType.phone,
-//               decoration: const InputDecoration(
-//                 labelText: 'Phone Number',
-//                 hintText: '+91XXXXXXXXXX',
-//               ),
-//             ),
-//
-//             const SizedBox(height: 16),
-//
-//             // OTP TEXTFIELD (only visible after OTP sent)
-//             if (otpSent)                           // 7
-//               TextField(
-//                 controller: otpController,         // 8
-//                 keyboardType: TextInputType.number,
-//                 decoration: const InputDecoration(
-//                   labelText: 'Enter OTP',
-//                 ),
-//               ),
-//
-//             const SizedBox(height: 24),
-//
-//             // BUTTON
-//             ElevatedButton(
-//               onPressed: loading
-//                   ? null
-//                   : () {
-//                 if (!otpSent) {
-//                   _sendOtp();               // 9
-//                 } else {
-//                   _verifyOtp();             // 10
-//                 }
-//               },
-//               child: Text(otpSent ? 'Verify OTP' : 'Send OTP'),
-//             ),
-//
-//             if (loading) const SizedBox(height: 16),
-//             if (loading) const CircularProgressIndicator(), // 11
-//           ],
-//         ),
-//
-//     );
-//   }
-//
-//   // STEP 1: SEND OTP
-//   Future<void> _sendOtp() async {
-//     setState(() {
-//       loading = true;
-//     });
-//
-//     await FirebaseAuth.instance.verifyPhoneNumber(
-//       phoneNumber: phoneController.text.trim(),    // 12
-//       verificationCompleted: (PhoneAuthCredential credential) async {
-//         // Auto sign-in on some devices
-//         await FirebaseAuth.instance.signInWithCredential(credential);     // 13
-//       },
-//       verificationFailed: (FirebaseAuthException e) {
-//         setState(() {
-//           loading = false;
-//         });
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(content: Text('Error: ${e.message}')),                // 14
-//         );
-//       },
-//       codeSent: (String verId, int? resendToken) {
-//         setState(() {
-//           loading = false;
-//           otpSent = true;             // 15
-//           verificationId = verId;     // 16
-//         });
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           const SnackBar(content: Text('OTP sent!')),                    // 17
-//         );
-//       },
-//       codeAutoRetrievalTimeout: (String verId) {
-//         verificationId = verId;                                         // 18
-//       },
-//     );
-//   }
-//
-//   // STEP 2: VERIFY OTP
-//   Future<void> _verifyOtp() async {
-//     setState(() {
-//       loading = true;
-//     });
-//
-//     try {
-//       PhoneAuthCredential credential = PhoneAuthProvider.credential(     // 19
-//         verificationId: verificationId,
-//         smsCode: otpController.text.trim(),
-//       );
-//
-//       UserCredential userCredential =
-//       await FirebaseAuth.instance.signInWithCredential(credential);  // 20
-//
-//       setState(() {
-//         loading = false;
-//       });
-//
-//       User? user = userCredential.user;                                  // 21
-//
-//       if (user != null) {
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(content: Text('Logged in as: ${user.phoneNumber}')),  // 22
-//         );
-//
-//         // TODO: Navigate to home/chat page
-//         // Navigator.pushReplacement(...)
-//       }
-//     } catch (e) {
-//       setState(() {
-//         loading = false;
-//       });
-//
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(content: Text('Invalid OTP')),                          // 23
-//       );
-//     }
-//   }
-// }
 import 'package:chat/Pages/homeppage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -161,11 +13,15 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
+
   final TextEditingController usernameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController =
+  TextEditingController();
+  final TextEditingController _confirmPasswordController =
+  TextEditingController();
+
   bool _isLoading = false;
 
   Future<void> _register() async {
@@ -173,39 +29,41 @@ class _RegisterPageState extends State<RegisterPage> {
       setState(() => _isLoading = true);
 
       try {
-        final String email = _emailController.text.trim();
-        final String password = _passwordController.text.trim();
-        final String name = usernameController.text.trim();
-        final String phonenumber = phoneController.text.trim();
+        final email = _emailController.text.trim();
+        final password = _passwordController.text.trim();
+        final name = usernameController.text.trim();
+        final phone = phoneController.text.trim();
 
-        // Create user with FirebaseAuth
-        final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        final credential = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(
           email: email,
           password: password,
         );
 
         final uid = credential.user!.uid;
-        // Save user info to Firestore
-        await FirebaseFirestore.instance.collection('users').doc(uid).set({
-          'Uid':uid,
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .set({
+          'Uid': uid,
           'username': name,
           'email': email,
-          'phone':phonenumber,
+          'phone': phone,
           'createdAt': FieldValue.serverTimestamp(),
         });
 
-        // Save to SharedPreferences (excluding password for security)
-        SharedPreferences prefs = await SharedPreferences.getInstance();
+        SharedPreferences prefs =
+        await SharedPreferences.getInstance();
         prefs.setString("email", email);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Registration successful!')),
         );
 
-        // Navigate to BottomNavigation
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => homepage()),
+          MaterialPageRoute(builder: (_) => homepage()),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -220,151 +78,225 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void dispose() {
     usernameController.dispose();
+    phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
+  // -------- Reusable Field --------
+  Widget inputField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool obscure = false,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscure,
+        keyboardType: keyboardType,
+        validator: validator,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Colors.white60),
+          prefixIcon: Icon(icon, color: Colors.white60),
+          filled: true,
+          fillColor: Colors.grey.shade900,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
+
+      // ---------------- APP BAR ----------------
       appBar: AppBar(
-        title: const Text('Register'),
+        backgroundColor: Colors.black,
+        elevation: 0,
         centerTitle: true,
+        title: const Text(
+          "Register",
+          style: TextStyle(color: Colors.white),
+        ),
       ),
+
+      // ---------------- BODY ----------------
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Create Account',
+
+                // -------- ICON --------
+                const CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.grey,
+                  child: Icon(Icons.person_add,
+                      size: 40, color: Colors.white),
+                ),
+
+                const SizedBox(height: 25),
+
+                // -------- TITLE --------
+                const Text(
+                  "Create Account",
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 30.0),
 
-                /// Name
-                TextFormField(
+                const SizedBox(height: 6),
+
+                const Text(
+                  "Join and start chatting",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white60,
+                    fontSize: 14,
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                inputField(
                   controller: usernameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Name',
-                    hintText: 'Choose a name',
-                    prefixIcon: Icon(Icons.person_outline),
-                    border: OutlineInputBorder(),
-                  ),
+                  label: "Full Name",
+                  icon: Icons.person_outline,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter your name';
-                    if (value.length < 3) return 'Username must be at least 3 characters';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20.0),
-                TextFormField(
-                  controller: phoneController,
-                  decoration: const InputDecoration(
-                    labelText: 'Ph.no',
-                    hintText: 'Phone Numbe',
-                    prefixIcon: Icon(Icons.person_outline),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Enter the Phonenumber';
-                    if (value.length < 10) return 'Phonenumber must be 10 digits';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20.0),
-
-                /// Email
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    hintText: 'Enter your email address',
-                    prefixIcon: Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter your email';
-                    if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                      return 'Please enter a valid email address';
+                    if (value == null || value.isEmpty) {
+                      return 'Enter your name';
+                    }
+                    if (value.length < 3) {
+                      return 'Minimum 3 characters';
                     }
                     return null;
                   },
                 ),
-                const SizedBox(height: 20.0),
 
-                /// Password
-                TextFormField(
+                inputField(
+                  controller: phoneController,
+                  label: "Phone Number",
+                  icon: Icons.phone_outlined,
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Enter phone number';
+                    }
+                    if (value.length < 10) {
+                      return 'Enter valid number';
+                    }
+                    return null;
+                  },
+                ),
+
+                inputField(
+                  controller: _emailController,
+                  label: "Email",
+                  icon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Enter email';
+                    }
+                    if (!RegExp(
+                        r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$')
+                        .hasMatch(value)) {
+                      return 'Invalid email';
+                    }
+                    return null;
+                  },
+                ),
+
+                inputField(
                   controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    hintText: 'Create a password',
-                    prefixIcon: Icon(Icons.lock_outline),
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
+                  label: "Password",
+                  icon: Icons.lock_outline,
+                  obscure: true,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter a password';
-                    if (value.length < 6) return 'Password must be at least 6 characters';
+                    if (value == null || value.isEmpty) {
+                      return 'Enter password';
+                    }
+                    if (value.length < 6) {
+                      return 'Minimum 6 characters';
+                    }
                     return null;
                   },
                 ),
-                const SizedBox(height: 20.0),
 
-                /// Confirm Password
-                TextFormField(
+                inputField(
                   controller: _confirmPasswordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Confirm Password',
-                    hintText: 'Re-enter your password',
-                    prefixIcon: Icon(Icons.lock_open_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
+                  label: "Confirm Password",
+                  icon: Icons.lock_open_outlined,
+                  obscure: true,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please confirm your password';
-                    if (value != _passwordController.text) return 'Passwords do not match';
+                    if (value != _passwordController.text) {
+                      return 'Passwords do not match';
+                    }
                     return null;
                   },
                 ),
-                const SizedBox(height: 30.0),
 
-                /// Register Button or Loading
+                const SizedBox(height: 30),
+
+                // -------- REGISTER BUTTON --------
                 _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : ElevatedButton(
                   onPressed: _register,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 15.0),
-                    textStyle: const TextStyle(fontSize: 18.0),
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 15),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
+                      borderRadius:
+                      BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Text('Register',style: TextStyle(color: Colors.white),),
+                  child: const Text(
+                    "Register",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 20.0),
 
-                /// Already have account?
+                const SizedBox(height: 20),
+
+                // -------- LOGIN --------
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Already have an account?"),
+                    const Text(
+                      "Already have an account?",
+                      style: TextStyle(color: Colors.white60),
+                    ),
                     TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop(); // Back to login
-                      },
-                      child: const Text('Login'),
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        "Login",
+                        style: TextStyle(color: Colors.green),
+                      ),
                     ),
                   ],
                 ),
