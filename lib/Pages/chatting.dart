@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:chat/Customs/MessageBUbble.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -20,7 +20,7 @@ class Chatting extends StatefulWidget {
 }
 
 class _ChattingState extends State<Chatting> {
-  final textcontroller = TextEditingController();
+  final TextEditingController textcontroller = TextEditingController();
 
   @override
   void initState() {
@@ -39,8 +39,6 @@ class _ChattingState extends State<Chatting> {
 
   @override
   Widget build(BuildContext context) {
-    final myId = FirebaseAuth.instance.currentUser!.uid;
-
     return Scaffold(
       backgroundColor: Colors.black,
 
@@ -76,98 +74,17 @@ class _ChattingState extends State<Chatting> {
       // ---------------- BODY ----------------
       body: Consumer<Chatprovider>(
         builder: (context, chat, _) {
-          if (chat.chatroomId == null) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
           return Column(
             children: [
-              // ---------------- MESSAGES ----------------
-              Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage("assets/images/chat 1.jpg"),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: chat.messagesStream,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Center(
-                            child: CircularProgressIndicator());
-                      }
-
-                      if (!snapshot.hasData ||
-                          snapshot.data!.docs.isEmpty) {
-                        return const Center(
-                          child: Text(
-                            "No messages",
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                        );
-                      }
-
-                      return ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 10),
-                        itemCount: snapshot.data!.docs.length,
-                        itemBuilder: (context, index) {
-                          final msg = snapshot.data!.docs[index];
-                          final isMe = msg['senderId'] == myId;
-
-                          return Align(
-                            alignment: isMe
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
-                            child: Container(
-                              constraints: BoxConstraints(
-                                maxWidth:
-                                MediaQuery.of(context).size.width *
-                                    0.75,
-                              ),
-                              margin: const EdgeInsets.symmetric(
-                                  vertical: 4),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: isMe
-                                    ? Colors.green.shade600
-                                    : Colors.grey.shade800,
-                                borderRadius: BorderRadius.only(
-                                  topLeft:
-                                  const Radius.circular(14),
-                                  topRight:
-                                  const Radius.circular(14),
-                                  bottomLeft: Radius.circular(
-                                      isMe ? 14 : 0),
-                                  bottomRight: Radius.circular(
-                                      isMe ? 0 : 14),
-                                ),
-                              ),
-                              child: Text(
-                                msg['text'],
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
+              // -------- MESSAGES --------
+              const Expanded(
+                child: messagebubble(),
               ),
 
-              // ---------------- INPUT BAR ----------------
+              // -------- INPUT BAR --------
               SafeArea(
                 child: Padding(
-                  padding:
-                  const EdgeInsets.fromLTRB(8, 6, 8, 6),
+                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
                   child: Container(
                     padding:
                     const EdgeInsets.symmetric(horizontal: 10),
@@ -187,11 +104,12 @@ class _ChattingState extends State<Chatting> {
                         Expanded(
                           child: TextField(
                             controller: textcontroller,
-                            style: const TextStyle(color: Colors.white),
+                            style:
+                            const TextStyle(color: Colors.white),
                             decoration: const InputDecoration(
                               hintText: "Type a message",
-                              hintStyle:
-                              TextStyle(color: Colors.white54),
+                              hintStyle: TextStyle(
+                                  color: Colors.white54),
                               border: InputBorder.none,
                             ),
                           ),

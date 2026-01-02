@@ -6,7 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../Providers/Chatprovider.dart';
 import '../Providers/Nameprovider.dart';
 import 'Add contact.dart';
@@ -21,6 +20,12 @@ class homepage extends StatefulWidget {
 class _homepageState extends State<homepage> {
   /// receiverId -> chat document
   final Map<String, QueryDocumentSnapshot> chatMap = {};
+
+  String formatTime(Timestamp? timestamp, BuildContext context) {
+    if (timestamp == null) return '';
+    DateTime dateTime = timestamp.toDate();
+    return TimeOfDay.fromDateTime(dateTime).format(context);
+  }
 
   @override
   void initState() {
@@ -87,7 +92,7 @@ class _homepageState extends State<homepage> {
             MaterialPageRoute(builder: (_) => const Add()),
           );
         },
-        child: const Icon(Icons.chat, color: Colors.black),
+        child: const Icon(Icons.add, color: Colors.black),
       ),
 
       // ---------------- BODY ----------------
@@ -115,6 +120,8 @@ class _homepageState extends State<homepage> {
                 }
               }
 
+
+
               return Container(
                 decoration: const BoxDecoration(
                   image: DecorationImage(
@@ -128,6 +135,8 @@ class _homepageState extends State<homepage> {
                   itemBuilder: (context, index) {
                     final contact = contacts.contacts[index];
                     final chatDoc = chatMap[contact['receiverId']];
+
+                    final Timestamp? ts = chatDoc?['lastMessageTime'];
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(
@@ -189,16 +198,30 @@ class _homepageState extends State<homepage> {
                                       ),
                                     ),
                                     const SizedBox(height: 6),
-                                    Text(
-                                      chatDoc != null
-                                          ? chatDoc['lastMessage']
-                                          : "Tap to start the chat",
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 13,
-                                      ),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            chatDoc != null
+                                                ? chatDoc['lastMessage']
+                                                : "Tap to start the chat",
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 40,),
+                                        Text(
+                                          formatTime(ts, context),
+                                          style: const TextStyle(
+                                            color: Colors.white60,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
