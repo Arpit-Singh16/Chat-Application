@@ -36,9 +36,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   provider: ^6.1.5+1
   cloud_firestore: ^6.1.0
+  image_picker: ^1.0.7
   firebase_auth: ^6.1.2
   firebase_core: ^4.2.1
+  url_launcher: ^6.2.5
   shared_preferences: ^2.5.4
+  google_generative_ai: ^0.4.7
 
 dev_dependencies:
   flutter_test:

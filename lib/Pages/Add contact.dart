@@ -57,8 +57,9 @@ class _AddState extends State<Add> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      validator: (value) =>
-                      value == null || value.isEmpty ? 'Name is required' : null,
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Name is required'
+                          : null,
                     ),
                     const SizedBox(height: 20),
 
@@ -76,41 +77,40 @@ class _AddState extends State<Add> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      validator: (value) =>
-                      value == null || value.isEmpty ? 'Phone is required' : null,
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Phone is required'
+                          : null,
                     ),
                     const SizedBox(height: 20),
 
                     isLoading
                         ? const CircularProgressIndicator()
                         : ElevatedButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          setState(() => isLoading = true);
+                                onPressed: () async {
+                                  if (_formKey.currentState!.validate()) {
+                                    setState(() => isLoading = true);
 
-                          await contact.addcontact(
-                            nameController.text.trim(),
-                            phoneController.text.trim(),
+                                    await contact.addcontact(
+                                      nameController.text.trim(),
+                                      phoneController.text.trim(),
+                                    );
+                                    Navigator.pop(context);
 
-                          );
-                          Navigator.pop(context);
+                                    setState(() => isLoading = false);
 
-                          setState(() => isLoading = false);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Contact saved ✅"),
+                                      ),
+                                    );
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Contact saved ✅"),
-                            ),
-                          );
-
-                          // Clear fields if you want
-                          nameController.clear();
-                          phoneController.clear();
-
-                        }
-                      },
-                      child: const Text("Save"),
-                    ),
+                                    // Clear fields if you want
+                                    nameController.clear();
+                                    phoneController.clear();
+                                  }
+                                },
+                                child: const Text("Save"),
+                              ),
                   ],
                 ),
               ),

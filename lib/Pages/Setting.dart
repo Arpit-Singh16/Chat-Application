@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Settingspage extends StatelessWidget {
   const Settingspage({super.key});
@@ -69,6 +70,14 @@ class Settingspage extends StatelessWidget {
 
           const SizedBox(height: 20),
 
+          /// -------- AI KEY --------
+          settingsTile(
+            icon: Icons.key,
+            title: "AI Assistant",
+            subtitle: "Configure Gemini API Key",
+            onTap: () => _showApiKeyDialog(context),
+          ),
+
           /// -------- SETTINGS OPTIONS --------
           settingsTile(
             icon: Icons.lock_outline,
@@ -128,11 +137,52 @@ class Settingspage extends StatelessWidget {
     );
   }
 
+  void _showApiKeyDialog(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentKey = prefs.getString('gemini_api_key') ?? '';
+    final TextEditingController controller = TextEditingController(text: currentKey);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey.shade900,
+          title: const Text('Gemini API Key', style: TextStyle(color: Colors.white)),
+          content: TextField(
+            controller: controller,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(
+              hintText: 'Enter API Key',
+              hintStyle: TextStyle(color: Colors.white54),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+            ),
+            TextButton(
+              onPressed: () async {
+                await prefs.setString('gemini_api_key', controller.text.trim());
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('API Key saved ✅')),
+                );
+              },
+              child: const Text('Save', style: TextStyle(color: Colors.green)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   /// -------- REUSABLE TILE --------
   Widget settingsTile({
     required IconData icon,
     required String title,
     required String subtitle,
+    VoidCallback? onTap,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -162,7 +212,7 @@ class Settingspage extends StatelessWidget {
             color: Colors.white38,
             size: 16,
           ),
-          onTap: () {
+          onTap: onTap ?? () {
             // navigate later
           },
         ),

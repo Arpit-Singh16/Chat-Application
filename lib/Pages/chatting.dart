@@ -1,4 +1,5 @@
 import 'package:chat/Customs/MessageBUbble.dart';
+import 'package:chat/Providers/functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -8,11 +9,13 @@ import '../Providers/Chatprovider.dart';
 class Chatting extends StatefulWidget {
   final String receivername;
   final String receiverId;
+  final String Number;
 
   const Chatting({
     super.key,
     required this.receivername,
     required this.receiverId,
+    required this.Number,
   });
 
   @override
@@ -69,6 +72,38 @@ class _ChattingState extends State<Chatting> {
             ),
           ],
         ),
+        actions: [
+          IconButton(onPressed: ()=>calling(widget.Number), icon: Icon(Icons.phone)),
+          if (widget.receiverId != 'AI_ASSISTANT')
+            IconButton(
+              icon: const Icon(Icons.auto_awesome, color: Colors.white),
+              onPressed: () async {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const Center(child: CircularProgressIndicator()),
+                );
+                final summary = await Provider.of<Chatprovider>(context, listen: false).summarizeChat();
+                Navigator.pop(context); // dismiss loading
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    backgroundColor: Colors.grey.shade900,
+                    title: const Text('Chat Summary', style: TextStyle(color: Colors.white)),
+                    content: SingleChildScrollView(
+                      child: Text(summary ?? 'No summary available.', style: const TextStyle(color: Colors.white70)),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Close', style: TextStyle(color: Colors.green)),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+        ],
       ),
 
       // ---------------- BODY ----------------
@@ -78,7 +113,7 @@ class _ChattingState extends State<Chatting> {
             children: [
               // -------- MESSAGES --------
               const Expanded(
-                child: messagebubble(),
+                child: MessageBubble(),
               ),
 
               // -------- INPUT BAR --------
@@ -94,13 +129,46 @@ class _ChattingState extends State<Chatting> {
                     ),
                     child: Row(
                       children: [
-                        IconButton(
-                          onPressed: () {},
-                          icon: const Icon(
-                            Icons.emoji_emotions_outlined,
-                            color: Colors.white70,
+                        if (widget.receiverId != 'AI_ASSISTANT')
+                          IconButton(
+                            onPressed: () async {
+                              final text = textcontroller.text.trim();
+                              if (text.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Please type a message first')),
+                                );
+                                return;
+                              }
+                              final date = await showDatePicker(
+                                context: context,
+                                initialDate: DateTime.now(),
+                                firstDate: DateTime.now(),
+                                lastDate: DateTime.now().add(const Duration(days: 365)),
+                              );
+                              if (date == null) return;
+                              final time = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.now(),
+                              );
+                              if (time == null) return;
+                              final scheduled = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                              if (scheduled.isBefore(DateTime.now())) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Cannot schedule in the past')),
+                                );
+                                return;
+                              }
+                              Provider.of<Chatprovider>(context, listen: false).sendmessages(text, scheduledTime: scheduled);
+                              textcontroller.clear();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Message scheduled for ${time.format(context)}')),
+                              );
+                            },
+                            icon: const Icon(
+                              Icons.schedule,
+                              color: Colors.white70,
+                            ),
                           ),
-                        ),
                         Expanded(
                           child: TextField(
                             controller: textcontroller,

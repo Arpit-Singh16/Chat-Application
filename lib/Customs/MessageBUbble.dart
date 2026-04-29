@@ -5,19 +5,19 @@ import 'package:provider/provider.dart';
 
 import '../Providers/Chatprovider.dart';
 
-class messagebubble extends StatelessWidget {
-  const messagebubble({super.key});
+class MessageBubble extends StatelessWidget {
+  const MessageBubble({super.key});
 
   // -------- TIME FORMAT --------
   String formatTime(Timestamp? timestamp, BuildContext context) {
     if (timestamp == null) return '';
-    DateTime dateTime = timestamp.toDate();
+    final dateTime = timestamp.toDate().toLocal();
     return TimeOfDay.fromDateTime(dateTime).format(context);
   }
 
   // -------- DATE LABEL --------
   String dateLabel(DateTime date) {
-    DateTime now = DateTime.now();
+    final now = DateTime.now();
 
     if (DateUtils.isSameDay(date, now)) {
       return "Today";
@@ -37,7 +37,7 @@ class messagebubble extends StatelessWidget {
     return months[month - 1];
   }
 
-  // -------- DATE SEPARATOR UI --------
+  // -------- DATE SEPARATOR --------
   Widget dateSeparator(String text) {
     return Center(
       child: Container(
@@ -69,13 +69,15 @@ class messagebubble extends StatelessWidget {
         }
 
         return StreamBuilder<QuerySnapshot>(
-          stream: chat.messagesStream,
+          stream: chat.messagesStream, // must be orderBy timestamp ASC
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+            if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            final messages = snapshot.data!.docs;
+
+            if (messages.isEmpty) {
               return const Center(
                 child: Text(
                   "No messages",
@@ -84,42 +86,58 @@ class messagebubble extends StatelessWidget {
               );
             }
 
-            final messages = snapshot.data!.docs;
-
             return ListView.builder(
+              reverse: true,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               itemCount: messages.length,
               itemBuilder: (context, index) {
-                final msg = messages[index];
-                final isMe = msg['senderId'] == myId;
+                final actualIndex = messages.length - 1 - index;
+                final msg = messages[actualIndex];
+                final msgData = msg.data() as Map<String, dynamic>;
 
-                final Timestamp? ts = msg['timestamp'];
+                final isMe = msgData['senderId'] == myId;
+
+                final isScheduled = msgData.containsKey('scheduledFor');
+                bool isPending = false;
+                if (isScheduled) {
+                  final scheduledFor = (msgData['scheduledFor'] as Timestamp).toDate();
+                  if (scheduledFor.isAfter(DateTime.now())) {
+                    if (!isMe) {
+                      return const SizedBox.shrink(); // hide from receiver
+                    }
+                    isPending = true;
+                  }
+                }
+
+                final Timestamp? ts = msgData['timestamp'];
                 final DateTime? currentDate =
-                ts != null ? ts.toDate() : null;
+                ts != null ? ts.toDate().toLocal() : null;
+
+                if (currentDate == null) {
+                  return const SizedBox.shrink();
+                }
 
                 bool showDate = false;
 
-                if (index == 0 && currentDate != null) {
+                if (actualIndex == 0) {
                   showDate = true;
-                } else if (index > 0 && currentDate != null) {
-                  final prevMsg = messages[index - 1];
-                  final Timestamp? prevTs = prevMsg['timestamp'];
+                } else {
+                  final prevMsg = messages[actualIndex - 1];
+                  final prevMsgData = prevMsg.data() as Map<String, dynamic>;
+                  final Timestamp? prevTs = prevMsgData['timestamp'];
 
                   if (prevTs != null) {
-                    final prevDate = prevTs.toDate();
-                    if (!DateUtils.isSameDay(currentDate, prevDate)) {
-                      showDate = true;
-                    }
+                    final prevDate = prevTs.toDate().toLocal();
+                    showDate =
+                    !DateUtils.isSameDay(currentDate, prevDate);
                   }
                 }
 
                 return Column(
                   children: [
-                    // -------- DATE SEPARATOR --------
-                    if (showDate && currentDate != null)
+                    if (showDate)
                       dateSeparator(dateLabel(currentDate)),
 
-                    // -------- MESSAGE BUBBLE --------
                     Align(
                       alignment: isMe
                           ? Alignment.centerRight
@@ -156,12 +174,22 @@ class messagebubble extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              formatTime(ts, context),
-                              style: const TextStyle(
-                                color: Colors.white60,
-                                fontSize: 11,
-                              ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (isPending)
+                                  const Padding(
+                                    padding: EdgeInsets.only(right: 4.0),
+                                    child: Icon(Icons.schedule, color: Colors.white54, size: 12),
+                                  ),
+                                Text(
+                                  formatTime(ts, context),
+                                  style: const TextStyle(
+                                    color: Colors.white60,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
